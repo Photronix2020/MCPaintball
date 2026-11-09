@@ -57,6 +57,8 @@ public final class Match {
     private static final String KIT_TAG = "SplatballKit";
     /** How far above a station its arena is built. */
     private static final int SKY_OFFSET = 40;
+    /** A world younger than this (one minute) counts as brand new for auto-play. */
+    private static final int NEW_WORLD_TICKS = 20 * 60;
 
     /** What to give a player back when they leave: game mode and where they came from. */
     private record Entry(GameType mode, ResourceKey<Level> dimension, Vec3 pos, float yRot) {}
@@ -193,6 +195,52 @@ public final class Match {
     private static ServerLevel arenaLevel(MinecraftServer server) {
         ArenaData data = ArenaData.get(server);
         return data.origin == null ? null : server.getLevel(data.dimension);
+    }
+
+    /**
+     * Called when a player joins the world. In a brand-new world the arena is built in the sky above
+     * them and a station is set down beside them; from then on everyone who logs in is dropped straight
+     * into the match. Worlds that already existed before the mod was added are left alone.
+     */
+    public static void autoJoin(ServerPlayer player) {
+        MinecraftServer server = player.server;
+        if (!Config.AUTO_PLAY.get() || player.hasDisconnected() || player.isSpectator() || isPlaying(player)) return;
+        ArenaData data = ArenaData.get(server);
+        if (arenaLevel(server) == null) {
+            ServerLevel level = player.serverLevel();
+            if (level.dimension() != Level.OVERWORLD || level.getGameTime() > NEW_WORLD_TICKS) return;
+            BlockPos station = player.blockPosition().north();
+            int y = Math.min(station.getY() + SKY_OFFSET, level.getMaxBuildHeight() - Arena.H - 2);
+            if (y <= station.getY() + 3) return;
+            Arena.build(level, new BlockPos(station.getX() - Arena.W / 2, y, station.getZ() - Arena.L / 2));
+            level.setBlock(station, Splatball.STATION.get().defaultBlockState(), 3);
+            data.set(level.dimension(), new BlockPos(station.getX() - Arena.W / 2, y, station.getZ() - Arena.L / 2), station);
+            data.auto = true;
+            data.setDirty();
+        }
+        if (!data.auto) return;
+        if (!active) begin(server, Config.KILLS_TO_WIN.get());
+        add(server, player, onATeam(player) ? isRed(player) : null);
+        balanceBots(server);
+    }
+
+    /** Auto-play arenas roll straight into the next match: fresh arena, scores and clock, same players. */
+    private static void rematch(MinecraftServer server) {
+        ArenaData data = ArenaData.get(server);
+        ServerLevel level = arenaLevel(server);
+        if (level == null) {
+            stop(server);
+            return;
+        }
+        bots.clear();   // rebuilding the arena removes the old bots
+        Arena.build(level, data.origin);
+        redScore = blueScore = 0;
+        totalTicks = ticksLeft = Config.MATCH_MINUTES.get() * 60 * 20;
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (isPlaying(player)) respawn(server, player);
+        }
+        balanceBots(server);
+        updateBar();
     }
 
     /**
@@ -424,7 +472,8 @@ public final class Match {
         }
         server.getPlayerList().broadcastSystemMessage(Component.literal("Paintball: ").append(result)
                 .append(Component.literal("  " + redScore + " - " + blueScore).withStyle(ChatFormatting.WHITE)), false);
-        stop(server);
+        if (ArenaData.get(server).auto && !players.isEmpty()) rematch(server);
+        else stop(server);
     }
 
     /** Ends the match and sends everyone back where they came from. Safe to call when no match is running. */

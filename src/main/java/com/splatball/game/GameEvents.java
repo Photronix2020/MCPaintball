@@ -28,6 +28,14 @@ public final class GameEvents {
     }
 
     @SubscribeEvent
+    public static void login(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            // a tick later, once the player is fully in the world
+            player.server.execute(() -> Match.autoJoin(player));
+        }
+    }
+
+    @SubscribeEvent
     public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && Match.isPlaying(player)) {
             Match.leave(player.server, player);

@@ -121,6 +121,23 @@ public class SplatballTests {
             Match.useStation(level, o.offset(Arena.W / 2, 1, 1), a);
             check(!Match.isActive(), "leaving as the last player ends the match");
             check(Match.bots().isEmpty() && enemy.isRemoved(), "bots are removed when the match ends");
+
+            // auto-play: logging in drops the player in, and a finished match rolls into the next one
+            Match.autoJoin(a);
+            check(!Match.isActive(), "auto-play leaves worlds with a hand-made arena alone");
+            ArenaData.get(server).auto = true;
+            Match.autoJoin(a);
+            check(Match.isPlaying(a) && Match.bots().size() == 7, "auto-play drops a joining player into a match");
+            for (int i = 0; i < 25; i++) {
+                com.splatball.entity.BotEntity foe = Match.bots().stream().filter(x -> Match.isRed(x) != Match.isRed(a)).findFirst().orElseThrow();
+                foe.removeAllEffects();
+                foe.invulnerableTime = 0;   // as a real paintball hit does
+                foe.hurt(Paint.damageSource(level, a, a), 1000.0F);
+            }
+            check(Match.isActive() && Match.isPlaying(a), "an auto-play match rolls into a rematch");
+            check(Match.score(true) == 0 && Match.score(false) == 0 && Match.bots().size() == 7, "the rematch starts fresh with new bots");
+            Match.leave(server, a);
+            check(!Match.isActive(), "the match still ends when the last player leaves");
             check(a.blockPosition().distManhattan(station) <= 2, "leaving returns the player to the station, at " + a.blockPosition());
 
             for (int dx = -1; dx <= 1; dx++) {

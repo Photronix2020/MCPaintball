@@ -25,6 +25,11 @@ public final class Config {
             .comment("Bots fill each team up to this many members and step aside as players join. 0 turns bots off.")
             .defineInRange("botsFillTeamTo", 4, 0, 16);
 
+    public static final ForgeConfigSpec.BooleanValue AUTO_PLAY = B
+            .comment("In a brand-new world, build the arena automatically and drop every player into the match when they log in.",
+                    "Worlds that existed before the mod was added are never touched; use a Paintball Station there.")
+            .define("autoPlay", true);
+
     public static final ForgeConfigSpec SPEC = B.build();
 
     private Config() {}

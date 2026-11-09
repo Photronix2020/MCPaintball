@@ -20,6 +20,8 @@ public class ArenaData extends SavedData {
     @Nullable
     public BlockPos home;
     public ResourceKey<Level> dimension = Level.OVERWORLD;
+    /** Built automatically for a new world: players are dropped in on login and matches repeat. */
+    public boolean auto;
 
     public static ArenaData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(ArenaData::load, ArenaData::new, "splatball_arena");
@@ -29,6 +31,7 @@ public class ArenaData extends SavedData {
         this.dimension = dimension;
         this.origin = origin.immutable();
         this.home = home == null ? null : home.immutable();
+        this.auto = false;
         setDirty();
     }
 
@@ -38,6 +41,7 @@ public class ArenaData extends SavedData {
             data.origin = NbtUtils.readBlockPos(tag.getCompound("Origin"));
             data.dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("Dimension")));
             if (tag.contains("Home")) data.home = NbtUtils.readBlockPos(tag.getCompound("Home"));
+            data.auto = tag.getBoolean("Auto");
         }
         return data;
     }
@@ -48,6 +52,7 @@ public class ArenaData extends SavedData {
             tag.put("Origin", NbtUtils.writeBlockPos(origin));
             tag.putString("Dimension", dimension.location().toString());
             if (home != null) tag.put("Home", NbtUtils.writeBlockPos(home));
+            tag.putBoolean("Auto", auto);
         }
         return tag;
     }

@@ -20,7 +20,13 @@ Players have 20 health. Markers are in the Splatball creative tab and have craft
 
 ## Playing
 
-Place a **Paintball Station** (Splatball creative tab, or wool + red dye + blue dye + a slime ball) and
+**New world: nothing to do.** Create a world with the mod installed and you are dropped straight into
+a match: the arena is built in the sky above your spawn, you get the full kit, and bots fill both teams.
+Everyone who logs in afterwards is dropped in too, and when a match ends the next one starts by itself.
+A Paintball Station is set down next to your spawn for getting back in after you leave. Set `autoPlay = false`
+in the config to turn this off.
+
+**Existing world:** auto-play never touches a world that is more than a minute old. There, place a **Paintball Station** (Splatball creative tab, or wool + red dye + blue dye + a slime ball) and
 right-click it. The first click builds the arena in the sky 40 blocks above the station; every click
 after that drops the player straight into the match with a full kit, starting one if none is running.
 Inside the arena there is a station at the back of each base: click it to leave and return to where you joined.
