@@ -249,7 +249,7 @@ def main():
     write(ASSETS / "models" / "item" / "paintball.json",
           {"parent": "item/generated", "textures": {"layer0": "splatball:item/paintball"}})
     for marker, extra in RECIPES.items():
-        write(ASSETS / "models" / "item" / f"{marker}.json", marker_model(marker))
+        # item models for the markers are written by tools/gun_models.py
         write(DATA / "recipes" / f"{marker}.json", recipe(marker, extra))
     write(DATA / "structures" / "empty.nbt", nbt_empty_structure())
 

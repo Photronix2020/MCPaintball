@@ -64,4 +64,6 @@ Needs JDK 17. `build.bat build` (uses the portable JDK in `..\.tools`) or `gradl
 
 - `gradlew runClient` launches a dev client with the mod.
 - `gradlew runGameTestServer` runs the end-to-end test in `src/main/java/com/splatball/test`.
-- `python tools/gen_assets.py` regenerates the item textures, models and recipes.
+- `python tools/gen_assets.py` regenerates the inventory sprites, the station block assets and recipes.
+- `python tools/gun_models.py` regenerates the 3D marker models (edit the box lists in that file) and writes `tools/guns_preview.png`.
+- Setting the environment variable `SPLATBALL_SHOTS=1` before `gradlew runClient` makes the dev client screenshot every marker in first person and from the side into `run/screenshots`, then quit.

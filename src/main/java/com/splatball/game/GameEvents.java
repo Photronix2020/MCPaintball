@@ -24,7 +24,10 @@ public final class GameEvents {
 
     @SubscribeEvent
     public static void tick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) Match.tick(event.getServer());
+        if (event.phase == TickEvent.Phase.END) {
+            Match.tick(event.getServer());
+            Arena.tick();
+        }
     }
 
     @SubscribeEvent
@@ -45,6 +48,7 @@ public final class GameEvents {
     @SubscribeEvent
     public static void stopping(ServerStoppingEvent event) {
         Match.stop(event.getServer());
+        Arena.forgetLevel();
     }
 
     private GameEvents() {}

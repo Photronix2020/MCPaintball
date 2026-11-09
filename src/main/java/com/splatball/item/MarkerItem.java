@@ -119,6 +119,18 @@ public class MarkerItem extends Item {
         return slotChanged || oldStack.getItem() != newStack.getItem();
     }
 
+    /** Players hold a marker up and aimed, like a loaded crossbow, instead of at their side. */
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(net.minecraft.world.entity.LivingEntity entity,
+                                                                               InteractionHand hand, ItemStack stack) {
+                return net.minecraft.client.model.HumanoidModel.ArmPose.CROSSBOW_HOLD;
+            }
+        });
+    }
+
     @Override
     public boolean isBarVisible(ItemStack stack) {
         return getAmmo(stack) < stats.magazine();

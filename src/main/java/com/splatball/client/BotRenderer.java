@@ -21,6 +21,13 @@ public class BotRenderer extends HumanoidMobRenderer<BotEntity, HumanoidModel<Bo
     }
 
     @Override
+    public void render(BotEntity bot, float yaw, float partialTick, com.mojang.blaze3d.vertex.PoseStack pose,
+                       net.minecraft.client.renderer.MultiBufferSource buffers, int light) {
+        this.model.rightArmPose = HumanoidModel.ArmPose.CROSSBOW_HOLD;   // aiming, same as players
+        super.render(bot, yaw, partialTick, pose, buffers, light);
+    }
+
+    @Override
     public ResourceLocation getTextureLocation(BotEntity bot) {
         return SKIN;
     }

@@ -2,7 +2,10 @@ package com.splatball.game;
 
 import com.splatball.Splatball;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -31,6 +34,11 @@ public final class Arena {
     private static final BlockState RED_FLOOR = Blocks.RED_GLAZED_TERRACOTTA.defaultBlockState();
     private static final BlockState BLUE_FLOOR = Blocks.BLUE_GLAZED_TERRACOTTA.defaultBlockState();
 
+    private static final int RELIGHT_FIRST = 20, RELIGHT_LAST = 100;
+    private static ServerLevel relightLevel;
+    private static BlockPos relightOrigin;
+    private static int relightTicks;
+
     private final ServerLevel level;
     private final BlockPos origin;
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -46,7 +54,35 @@ public final class Arena {
         // no stray animals, dropped items or old paintballs on the field
         AABB box = new AABB(origin, origin.offset(W, H + 1, L));
         for (Entity entity : level.getEntitiesOfClass(Entity.class, box, e -> !(e instanceof Player))) entity.discard();
+        relightLevel = level;
+        relightOrigin = origin.immutable();
+        relightTicks = RELIGHT_LAST;
         Splatball.LOGGER.info("Built paintball arena at {} in {}", origin, level.dimension().location());
+    }
+
+    /**
+     * Clients work out lighting themselves from block changes, but a client that receives one of the
+     * arena's chunks for the first time while the server is still lighting it (a player logging in as the
+     * arena is built) keeps that half-lit snapshot. So shortly after every build the finished light is
+     * sent to everyone in the dimension.
+     */
+    public static void tick() {
+        if (relightLevel == null) return;
+        relightTicks--;
+        if (relightTicks == RELIGHT_LAST - RELIGHT_FIRST || relightTicks == 0) {
+            for (int cx = relightOrigin.getX() >> 4; cx <= (relightOrigin.getX() + W - 1) >> 4; cx++) {
+                for (int cz = relightOrigin.getZ() >> 4; cz <= (relightOrigin.getZ() + L - 1) >> 4; cz++) {
+                    ClientboundLightUpdatePacket packet =
+                            new ClientboundLightUpdatePacket(new ChunkPos(cx, cz), relightLevel.getLightEngine(), null, null);
+                    for (ServerPlayer player : relightLevel.players()) player.connection.send(packet);
+                }
+            }
+        }
+        if (relightTicks <= 0) relightLevel = null;
+    }
+
+    public static void forgetLevel() {
+        relightLevel = null;
     }
 
     public static boolean contains(BlockPos origin, BlockPos pos) {
